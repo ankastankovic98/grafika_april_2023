@@ -247,12 +247,12 @@ int main() {
 
     // Load skybox textures
     vector<std::string> faces{
-            FileSystem::getPath("resources/textures/skybox/right.png"),
-            FileSystem::getPath("resources/textures/skybox/left.png"),
-            FileSystem::getPath("resources/textures/skybox/top.png"),
-            FileSystem::getPath("resources/textures/skybox/bottom.png"),
-            FileSystem::getPath("resources/textures/skybox/front.png"),
-            FileSystem::getPath("resources/textures/skybox/back.png")
+            FileSystem::getPath("resources/textures/skybox/space/px.png"),
+            FileSystem::getPath("resources/textures/skybox/space/nx.png"),
+            FileSystem::getPath("resources/textures/skybox/space/py.png"),
+            FileSystem::getPath("resources/textures/skybox/space/ny.png"),
+            FileSystem::getPath("resources/textures/skybox/space/pz.png"),
+            FileSystem::getPath("resources/textures/skybox/space/nz.png")
     };
 
     unsigned int cubemapTexture = loadCubemap(faces);
@@ -267,6 +267,7 @@ int main() {
     ourShader.use();
     ourShader.setInt("material.diffuse", 0);
     ourShader.setInt("material.specular", 0);
+
 
     // render loop
     // -----------
