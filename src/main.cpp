@@ -177,7 +177,7 @@ int main() {
     Shader skyboxShader("resources/shaders/skyboxShader.vs", "resources/shaders/skyboxShader.fs");
     // load models
     // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
+    Model ourModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
     ourModel.SetShaderTextureNamePrefix("material.");
 
     float skyboxVertices[] = {
@@ -247,12 +247,12 @@ int main() {
 
     // Load skybox textures
     vector<std::string> faces{
-            FileSystem::getPath("resources/textures/skybox/space/px.png"),
-            FileSystem::getPath("resources/textures/skybox/space/nx.png"),
-            FileSystem::getPath("resources/textures/skybox/space/py.png"),
-            FileSystem::getPath("resources/textures/skybox/space/ny.png"),
-            FileSystem::getPath("resources/textures/skybox/space/pz.png"),
-            FileSystem::getPath("resources/textures/skybox/space/nz.png")
+            FileSystem::getPath("resources/textures/skybox/space2/px.png"),
+            FileSystem::getPath("resources/textures/skybox/space2/nx.png"),
+            FileSystem::getPath("resources/textures/skybox/space2/py.png"),
+            FileSystem::getPath("resources/textures/skybox/space2/ny.png"),
+            FileSystem::getPath("resources/textures/skybox/space2/pz.png"),
+            FileSystem::getPath("resources/textures/skybox/space2/nz.png")
     };
 
     unsigned int cubemapTexture = loadCubemap(faces);
@@ -264,6 +264,7 @@ int main() {
 
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
+
     ourShader.use();
     ourShader.setInt("material.diffuse", 0);
     ourShader.setInt("material.specular", 0);
