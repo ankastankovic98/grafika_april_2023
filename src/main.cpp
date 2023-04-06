@@ -28,6 +28,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 unsigned int loadCubemap(vector<std::string> faces);
 
+void drawCity(Shader cityShader, Model cityModel);
+
 // settings
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
@@ -58,8 +60,8 @@ struct ProgramState {
     bool ImGuiEnabled = false;
     Camera camera;
     bool CameraMouseMovementUpdateEnabled = false;
-    glm::vec3 backpackPosition = glm::vec3(0.0f);
-    float backpackScale = 1.0f;
+    glm::vec3 cityPosition = glm::vec3(0.0f);
+    float cityScale = 1.0f;
     PointLight pointLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
@@ -75,15 +77,19 @@ void ProgramState::SaveToFile(std::string filename) {
         << clearColor.g << '\n'
         << clearColor.b << '\n'
         << ImGuiEnabled << '\n'
-        << backpackPosition[0] << '\n'
-        << backpackPosition[1] << '\n'
-        << backpackPosition[2] << '\n'
-        /*<< camera.Position.x << '\n'
+        << cityPosition[0] << '\n'
+        << cityPosition[1] << '\n'
+        << cityPosition[2] << '\n'
+        << cityScale << '\n'
+        << camera.Position.x << '\n'
         << camera.Position.y << '\n'
         << camera.Position.z << '\n'
         << camera.Front.x << '\n'
         << camera.Front.y << '\n'
-        << camera.Front.z << '\n'*/;
+        << camera.Front.z << '\n'
+        << pointLight.constant << '\n'
+        << pointLight.linear << '\n'
+        << pointLight.quadratic << '\n';
 }
 
 void ProgramState::LoadFromFile(std::string filename) {
@@ -93,12 +99,19 @@ void ProgramState::LoadFromFile(std::string filename) {
            >> clearColor.g
            >> clearColor.b
            >> ImGuiEnabled
-           /*>> camera.Position.x
+           >> cityPosition[0]
+           >> cityPosition[1]
+           >> cityPosition[2]
+           >> cityScale
+           >> camera.Position.x
            >> camera.Position.y
            >> camera.Position.z
            >> camera.Front.x
            >> camera.Front.y
-           >> camera.Front.z*/;
+           >> camera.Front.z
+           >> pointLight.constant
+           >> pointLight.linear
+           >> pointLight.quadratic;
     }
 }
 
@@ -177,8 +190,11 @@ int main() {
     Shader skyboxShader("resources/shaders/skyboxShader.vs", "resources/shaders/skyboxShader.fs");
     // load models
     // -----------
-    Model ourModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
-    ourModel.SetShaderTextureNamePrefix("material.");
+
+    //Model ourModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
+    Model cityModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
+    cityModel.SetShaderTextureNamePrefix("material.");
+
 
     float skyboxVertices[] = {
             // positions
@@ -231,10 +247,6 @@ int main() {
     pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
     pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
-    pointLight.constant = 1.0f;
-    pointLight.linear = 0.09f;
-    pointLight.quadratic = 0.032f;
-
     // skybox VAO
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
@@ -257,17 +269,12 @@ int main() {
 
     unsigned int cubemapTexture = loadCubemap(faces);
 
-
-
-    // draw in wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
 
     ourShader.use();
     ourShader.setInt("material.diffuse", 0);
-    ourShader.setInt("material.specular", 0);
+    ourShader.setInt("material.specular", 1);
 
 
     // render loop
@@ -307,6 +314,7 @@ int main() {
 
         // don't forget to enable shader before setting uniforms
         ourShader.use();
+
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
         ourShader.setVec3("pointLight.position", pointLight.position);
         ourShader.setVec3("pointLight.ambient", pointLight.ambient);
@@ -316,7 +324,7 @@ int main() {
         ourShader.setFloat("pointLight.linear", pointLight.linear);
         ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
         ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 32.0f);
+        ourShader.setFloat("material.shininess", 5.0f);
         // view/projection transformations
         projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
@@ -324,23 +332,11 @@ int main() {
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-
-
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
-
-        //ourModel2.Draw(ourShader);
+        drawCity(ourShader, cityModel);
 
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
-
-
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -353,11 +349,22 @@ int main() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
+    glDeleteVertexArrays(1, &skyboxVAO);
+    glDeleteBuffers(1, &skyboxVBO);
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
 }
+void drawCity(Shader modelShader, Model islandModel){
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, programState->cityPosition); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(programState->cityScale));    // it's a bit too big for our scene, so scale it down
+    modelShader.setMat4("model", model);
+    islandModel.Draw(modelShader);
+}
+
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -420,8 +427,8 @@ void DrawImGui(ProgramState *programState) {
         ImGui::Text("Hello text");
         ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
         ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
+        ImGui::DragFloat3("City position", (float*)&programState->cityPosition);
+        ImGui::DragFloat("City scale", &programState->cityScale, 0.05, 0.1, 20.0);
 
         ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
