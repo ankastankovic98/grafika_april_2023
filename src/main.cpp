@@ -28,7 +28,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 unsigned int loadCubemap(vector<std::string> faces);
 
-void drawCity(Shader cityShader, Model cityModel);
+void setLights(Shader lightingShader, glm::vec3 pointLightPossitions[]);
+
+void drawCity(Shader modelShader, Model cityModel);
+void drawTrees(Shader modelShader, Model treeModel);
 
 // settings
 const unsigned int SCR_WIDTH = 1920;
@@ -62,6 +65,11 @@ struct ProgramState {
     bool CameraMouseMovementUpdateEnabled = false;
     glm::vec3 cityPosition = glm::vec3(0.0f);
     float cityScale = 1.0f;
+    glm::vec3 treeOnePosition = glm::vec3(1.0f);
+    float treeOneScale = 0.10f;
+    glm::vec3 treeTwoPosition = glm::vec3(1.0f);
+    float treeTwoScale = 0.10f;
+
     PointLight pointLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
@@ -81,6 +89,14 @@ void ProgramState::SaveToFile(std::string filename) {
         << cityPosition[1] << '\n'
         << cityPosition[2] << '\n'
         << cityScale << '\n'
+        << treeOnePosition[0] << '\n'
+        << treeOnePosition[1] << '\n'
+        << treeOnePosition[2] << '\n'
+        << treeOneScale << '\n'
+        << treeTwoPosition[0] << '\n'
+        << treeTwoPosition[1] << '\n'
+        << treeTwoPosition[2] << '\n'
+        << treeTwoScale << '\n'
         << camera.Position.x << '\n'
         << camera.Position.y << '\n'
         << camera.Position.z << '\n'
@@ -103,6 +119,14 @@ void ProgramState::LoadFromFile(std::string filename) {
            >> cityPosition[1]
            >> cityPosition[2]
            >> cityScale
+           >> treeOnePosition[0]
+           >> treeOnePosition[1]
+           >> treeOnePosition[2]
+           >> treeOneScale
+           >> treeTwoPosition[0]
+           >> treeTwoPosition[1]
+           >> treeTwoPosition[2]
+           >> treeTwoScale
            >> camera.Position.x
            >> camera.Position.y
            >> camera.Position.z
@@ -170,8 +194,6 @@ int main() {
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
 
-
-
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
@@ -188,12 +210,17 @@ int main() {
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader skyboxShader("resources/shaders/skyboxShader.vs", "resources/shaders/skyboxShader.fs");
+    Shader instanceShader("resources/shaders/instanceShader.vs", "resources/shaders/instanceShader.fs");
     // load models
     // -----------
 
     //Model ourModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
     Model cityModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
     cityModel.SetShaderTextureNamePrefix("material.");
+    Model windTurbineModel("resources/objects/eolic_OBJ/EolicOBJ.obj");
+    windTurbineModel.SetShaderTextureNamePrefix("material.");
+    Model treeModel("resources/objects/Tree/Hand painted Tree.obj");
+    treeModel.SetShaderTextureNamePrefix("material.");
 
 
     float skyboxVertices[] = {
@@ -246,6 +273,55 @@ int main() {
     pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
     pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
     pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
+
+    // Instancing
+    unsigned int amount = 50;
+    glm::mat4* modelMatrices;
+    modelMatrices = new glm::mat4[amount];
+    srand(glfwGetTime());
+    float radius = 20.0f;
+    float offset = 25.0f;
+    for(unsigned int i = 0; i < amount; i++)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(rand() % 100 - 50, 15 + rand() % 10, 3 + (rand() % 100)));
+
+        float scale = (rand() % 100) / 300.0f;
+        model = glm::scale(model, glm::vec3(scale));
+        /* hocu rotaciju oko svoje ose, moram da istrazim kako
+        float rotAngle = 0;
+        model = glm::rotate(model, rotAngle, glm::vec3(1.0f, 1.0f, 1.0f));*/
+        modelMatrices[i] = model;
+    }
+
+    unsigned int buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+
+    for (unsigned int i = 0; i < windTurbineModel.meshes.size(); i++)
+    {
+        unsigned int VAO = windTurbineModel.meshes[i].VAO;
+        glBindVertexArray(VAO);
+        // set attribute pointers for matrix (4 times vec4)
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+
+        glBindVertexArray(0);
+    }
+
+    glFrontFace(GL_CW);
 
     // skybox VAO
     unsigned int skyboxVAO, skyboxVBO;
@@ -333,6 +409,20 @@ int main() {
         ourShader.setMat4("view", view);
 
         drawCity(ourShader, cityModel);
+        drawTrees(ourShader, treeModel);
+
+        instanceShader.use();
+        instanceShader.setMat4("projection", projection);
+        instanceShader.setMat4("view", view);
+
+        instanceShader.setInt("texture_diffuse", 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, windTurbineModel.textures_loaded[0].id);
+        for (unsigned int i = 0; i < windTurbineModel.meshes.size(); i++) {
+            glBindVertexArray(windTurbineModel.meshes[i].VAO);
+            glDrawElementsInstanced(GL_TRIANGLES, windTurbineModel.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount);
+            glBindVertexArray(0);
+        }
 
 
         if (programState->ImGuiEnabled)
@@ -352,20 +442,36 @@ int main() {
 
     glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteBuffers(1, &skyboxVBO);
+    for(unsigned int i = 0; i < amount; i++){
+        glDeleteVertexArrays(1, &(windTurbineModel.meshes[i].VAO));
+    }
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
 }
-void drawCity(Shader modelShader, Model islandModel){
+void drawCity(Shader modelShader, Model cityModel){
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, programState->cityPosition); // translate it down so it's at the center of the scene
     model = glm::scale(model, glm::vec3(programState->cityScale));    // it's a bit too big for our scene, so scale it down
     modelShader.setMat4("model", model);
-    islandModel.Draw(modelShader);
+    cityModel.Draw(modelShader);
 }
 
+void drawTrees(Shader modelShader, Model treeModel){
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, programState->treeOnePosition); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(programState->treeOneScale));    // it's a bit too big for our scene, so scale it down
+    modelShader.setMat4("model", model);
+    treeModel.Draw(modelShader);
 
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, programState->treeTwoPosition); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(programState->treeTwoScale));    // it's a bit too big for our scene, so scale it down
+    modelShader.setMat4("model", model);
+    treeModel.Draw(modelShader);
+
+}
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window) {
@@ -427,8 +533,15 @@ void DrawImGui(ProgramState *programState) {
         ImGui::Text("Hello text");
         ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
         ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
+
         ImGui::DragFloat3("City position", (float*)&programState->cityPosition);
         ImGui::DragFloat("City scale", &programState->cityScale, 0.05, 0.1, 20.0);
+
+        ImGui::DragFloat3("Tree one position", (float*)&programState->treeOnePosition);
+        ImGui::DragFloat("Tree one scale", &programState->treeOneScale, 0.05, 0.1, 20.0);
+
+        ImGui::DragFloat3("Tree two position", (float*)&programState->treeTwoPosition);
+        ImGui::DragFloat("Tree two scale", &programState->treeTwoScale, 0.05, 0.1, 20.0);
 
         ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
