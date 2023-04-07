@@ -1,0 +1,101 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 08.11.2017 19:30:53
+
+newmtl Main_3
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.5882 0.5882 0.5882
+	map_Ka Main-3VRayCompleteMap.tga
+	map_Kd Main-3VRayCompleteMap.tga
+
+newmtl Main_1
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.5882 0.5882 0.5882
+	map_Ka Main_1VRayCompleteMap.tga
+	map_Kd Main_1VRayCompleteMap.tga
+
+newmtl River
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.5882 0.5882 0.5882
+	map_Ka RiverVRayCompleteMap.tga
+	map_Kd RiverVRayCompleteMap.tga
+
+newmtl Main_2
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.5882 0.5882 0.5882
+	map_Ka Main_2VRayCompleteMap.tga
+	map_Kd Main_2VRayCompleteMap.tga
+
+newmtl CHuan
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.5882 0.5882 0.5882
+	map_Ka CHuanVRayCompleteMap.tga
+	map_Kd CHuanVRayCompleteMap.tga
+
+newmtl BuildingAround
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.5882 0.5882 0.5882
+	map_Ka BuildingAroundVRayCompleteMap.tga
+	map_Kd BuildingAroundVRayCompleteMap.tga
+
+newmtl 08___Default
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.5882 0.5882 0.5882
+	map_Ka RiverVRayCompleteMap.tga
+	map_Kd RiverVRayCompleteMap.tga
+	map_d RiverVRayCompleteMap.tga

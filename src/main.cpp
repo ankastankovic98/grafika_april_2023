@@ -284,7 +284,7 @@ int main() {
     for(unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(rand() % 100 - 50, 15 + rand() % 10, 3 + (rand() % 100)));
+        model = glm::translate(model, glm::vec3(rand() % 100 - 50, 5 + rand() % 10, 3 + (rand() % 100)));
 
         float scale = (rand() % 100) / 300.0f;
         model = glm::scale(model, glm::vec3(scale));
