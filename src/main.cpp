@@ -28,7 +28,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 unsigned int loadCubemap(vector<std::string> faces);
 
-void setLights(Shader lightingShader, glm::vec3 pointLightPossitions[]);
+void setLights(Shader lightingShader, glm::vec3 pointLightPositions[]);
 
 void drawCity(Shader modelShader, Model cityModel);
 void drawTrees(Shader modelShader, Model treeModel);
@@ -69,7 +69,7 @@ struct ProgramState {
     float treeOneScale = 0.10f;
     glm::vec3 treeTwoPosition = glm::vec3(1.0f);
     float treeTwoScale = 0.10f;
-
+    bool wireframe = false;
     PointLight pointLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
@@ -103,9 +103,7 @@ void ProgramState::SaveToFile(std::string filename) {
         << camera.Front.x << '\n'
         << camera.Front.y << '\n'
         << camera.Front.z << '\n'
-        << pointLight.constant << '\n'
-        << pointLight.linear << '\n'
-        << pointLight.quadratic << '\n';
+        << wireframe << '\n';
 }
 
 void ProgramState::LoadFromFile(std::string filename) {
@@ -135,7 +133,8 @@ void ProgramState::LoadFromFile(std::string filename) {
            >> camera.Front.z
            >> pointLight.constant
            >> pointLight.linear
-           >> pointLight.quadratic;
+           >> pointLight.quadratic
+           >> wireframe;
     }
 }
 
@@ -208,7 +207,7 @@ int main() {
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    Shader ourShader("resources/shaders/1.model_loading.vs", "resources/shaders/1.model_loading.fs");
     Shader skyboxShader("resources/shaders/skyboxShader.vs", "resources/shaders/skyboxShader.fs");
     Shader instanceShader("resources/shaders/instanceShader.vs", "resources/shaders/instanceShader.fs");
     // load models
@@ -268,19 +267,12 @@ int main() {
             -1.0f, -1.0f,  1.0f
     };
 
-    PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
-    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
-    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
-    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
-
     // Instancing
     unsigned int amount = 50;
     glm::mat4* modelMatrices;
     modelMatrices = new glm::mat4[amount];
     srand(glfwGetTime());
-    float radius = 20.0f;
-    float offset = 25.0f;
+
     for(unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model = glm::mat4(1.0f);
@@ -366,6 +358,11 @@ int main() {
         // -----
         processInput(window);
 
+        if(programState->wireframe)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 
         // render
         // ------
@@ -391,7 +388,7 @@ int main() {
         // don't forget to enable shader before setting uniforms
         ourShader.use();
 
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        /*pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
         ourShader.setVec3("pointLight.position", pointLight.position);
         ourShader.setVec3("pointLight.ambient", pointLight.ambient);
         ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
@@ -400,7 +397,9 @@ int main() {
         ourShader.setFloat("pointLight.linear", pointLight.linear);
         ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
         ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 5.0f);
+        ourShader.setFloat("material.shininess", 5.0f);*/
+        //setLights(ourShader, pointLightPositions);
+
         // view/projection transformations
         projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
@@ -529,7 +528,7 @@ void DrawImGui(ProgramState *programState) {
 
     {
         static float f = 0.0f;
-        ImGui::Begin("Hello window");
+        ImGui::Begin("Setup window");
         ImGui::Text("Hello text");
         ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
         ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
@@ -543,9 +542,10 @@ void DrawImGui(ProgramState *programState) {
         ImGui::DragFloat3("Tree two position", (float*)&programState->treeTwoPosition);
         ImGui::DragFloat("Tree two scale", &programState->treeTwoScale, 0.05, 0.1, 20.0);
 
-        ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
-        ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
-        ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
+
+        ImGui::Text("Effects");
+        ImGui::Checkbox("Draw Wireframe", &programState->wireframe);
+
         ImGui::End();
     }
 
@@ -607,3 +607,51 @@ unsigned int loadCubemap(vector<std::string> faces) {
 
     return textureID;
 }
+
+/*void setLights(Shader lightingShader, glm::vec3 pointLightPositions[]) {
+    //directional light
+    lightingShader.setVec3("dirLight.direction", programState->dirLightDirection);
+    lightingShader.setVec3("dirLight.ambient", programState->dirLightAmbient);
+    lightingShader.setVec3("dirLight.diffuse", programState->dirLightDiffuse);
+    lightingShader.setVec3("dirLight.specular", programState->dirLightSpecular);
+    // point light 1
+    lightingShader.setVec3("pointLights[0].position", pointLightPositions[0]);
+    lightingShader.setVec3("pointLights[0].ambient", programState->pointLightAmbient);
+    lightingShader.setVec3("pointLights[0].diffuse", programState->pointLightDiffuse);
+    lightingShader.setVec3("pointLights[0].specular", programState->pointLightSpecular);
+    lightingShader.setFloat("pointLights[0].constant", programState->pointLight.constant);
+    lightingShader.setFloat("pointLights[0].linear", programState->pointLight.linear);
+    lightingShader.setFloat("pointLights[0].quadratic", programState->pointLight.quadratic);
+    // point light 2
+    lightingShader.setVec3("pointLights[1].position", pointLightPositions[1]);
+    lightingShader.setVec3("pointLights[1].ambient", programState->pointLightAmbient);
+    lightingShader.setVec3("pointLights[1].diffuse", programState->pointLightDiffuse);
+    lightingShader.setVec3("pointLights[1].specular", programState->pointLightSpecular);
+    lightingShader.setFloat("pointLights[1].constant", programState->pointLight.constant);
+    lightingShader.setFloat("pointLights[1].linear", programState->pointLight.linear);
+    lightingShader.setFloat("pointLights[1].quadratic", programState->pointLight.quadratic);
+    // point light 3
+    lightingShader.setVec3("pointLights[2].position", pointLightPositions[2]);
+    lightingShader.setVec3("pointLights[2].ambient", programState->pointLightAmbient);
+    lightingShader.setVec3("pointLights[2].diffuse", programState->pointLightDiffuse);
+    lightingShader.setVec3("pointLights[2].specular", programState->pointLightSpecular);
+    lightingShader.setFloat("pointLights[2].constant", programState->pointLight.constant);
+    lightingShader.setFloat("pointLights[2].linear", programState->pointLight.linear);
+    lightingShader.setFloat("pointLights[2].quadratic", programState->pointLight.quadratic);
+    // point light 4
+    lightingShader.setVec3("pointLights[3].position", pointLightPositions[3]);
+    lightingShader.setVec3("pointLights[3].ambient", programState->pointLightAmbient);
+    lightingShader.setVec3("pointLights[3].diffuse", programState->pointLightDiffuse);
+    lightingShader.setVec3("pointLights[3].specular", programState->pointLightSpecular);
+    lightingShader.setFloat("pointLights[3].constant", programState->pointLight.constant);
+    lightingShader.setFloat("pointLights[3].linear", programState->pointLight.linear);
+    lightingShader.setFloat("pointLights[3].quadratic", programState->pointLight.quadratic);
+    // point light 5
+    lightingShader.setVec3("pointLights[4].position", pointLightPositions[4]);
+    lightingShader.setVec3("pointLights[4].ambient", programState->pointLightAmbient);
+    lightingShader.setVec3("pointLights[4].diffuse", programState->pointLightDiffuse);
+    lightingShader.setVec3("pointLights[4].specular", programState->pointLightSpecular);
+    lightingShader.setFloat("pointLights[4].constant", programState->pointLight.constant);
+    lightingShader.setFloat("pointLights[4].linear", programState->pointLight.linear);
+    lightingShader.setFloat("pointLights[4].quadratic", programState->pointLight.quadratic);
+}*/
