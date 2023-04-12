@@ -28,7 +28,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 unsigned int loadCubemap(vector<std::string> faces);
 
-void setLights(Shader lightingShader, glm::vec3 pointLightPositions[]);
 
 void drawCity(Shader modelShader, Model cityModel);
 void drawTrees(Shader modelShader, Model treeModel);
@@ -202,14 +201,14 @@ int main() {
     // Culling
     glCullFace(GL_FRONT);
     // Blending
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND);
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/1.model_loading.vs", "resources/shaders/1.model_loading.fs");
+    Shader ourShader("resources/shaders/cityShader.vs", "resources/shaders/cityShader.fs");
     Shader skyboxShader("resources/shaders/skyboxShader.vs", "resources/shaders/skyboxShader.fs");
     Shader instanceShader("resources/shaders/instanceShader.vs", "resources/shaders/instanceShader.fs");
+    Shader objShader("resources/shaders/object_lighting.vs", "resources/shaders/object_lighting.fs");
     // load models
     // -----------
 
@@ -217,7 +216,6 @@ int main() {
     Model cityModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
     cityModel.SetShaderTextureNamePrefix("material.");
     Model windTurbineModel("resources/objects/eolic_OBJ/EolicOBJ.obj");
-    windTurbineModel.SetShaderTextureNamePrefix("material.");
     Model treeModel("resources/objects/Tree/Hand painted Tree.obj");
     treeModel.SetShaderTextureNamePrefix("material.");
 
@@ -354,8 +352,6 @@ int main() {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // input
-        // -----
         processInput(window);
 
         if(programState->wireframe)
@@ -388,18 +384,6 @@ int main() {
         // don't forget to enable shader before setting uniforms
         ourShader.use();
 
-        /*pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 5.0f);*/
-        //setLights(ourShader, pointLightPositions);
-
         // view/projection transformations
         projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
@@ -415,8 +399,12 @@ int main() {
         instanceShader.setMat4("view", view);
 
         instanceShader.setInt("texture_diffuse", 0);
+        instanceShader.setInt("texture_specular", 1);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, windTurbineModel.textures_loaded[0].id);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, windTurbineModel.textures_loaded[1].id);
+
         for (unsigned int i = 0; i < windTurbineModel.meshes.size(); i++) {
             glBindVertexArray(windTurbineModel.meshes[i].VAO);
             glDrawElementsInstanced(GL_TRIANGLES, windTurbineModel.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount);
@@ -607,51 +595,3 @@ unsigned int loadCubemap(vector<std::string> faces) {
 
     return textureID;
 }
-
-/*void setLights(Shader lightingShader, glm::vec3 pointLightPositions[]) {
-    //directional light
-    lightingShader.setVec3("dirLight.direction", programState->dirLightDirection);
-    lightingShader.setVec3("dirLight.ambient", programState->dirLightAmbient);
-    lightingShader.setVec3("dirLight.diffuse", programState->dirLightDiffuse);
-    lightingShader.setVec3("dirLight.specular", programState->dirLightSpecular);
-    // point light 1
-    lightingShader.setVec3("pointLights[0].position", pointLightPositions[0]);
-    lightingShader.setVec3("pointLights[0].ambient", programState->pointLightAmbient);
-    lightingShader.setVec3("pointLights[0].diffuse", programState->pointLightDiffuse);
-    lightingShader.setVec3("pointLights[0].specular", programState->pointLightSpecular);
-    lightingShader.setFloat("pointLights[0].constant", programState->pointLight.constant);
-    lightingShader.setFloat("pointLights[0].linear", programState->pointLight.linear);
-    lightingShader.setFloat("pointLights[0].quadratic", programState->pointLight.quadratic);
-    // point light 2
-    lightingShader.setVec3("pointLights[1].position", pointLightPositions[1]);
-    lightingShader.setVec3("pointLights[1].ambient", programState->pointLightAmbient);
-    lightingShader.setVec3("pointLights[1].diffuse", programState->pointLightDiffuse);
-    lightingShader.setVec3("pointLights[1].specular", programState->pointLightSpecular);
-    lightingShader.setFloat("pointLights[1].constant", programState->pointLight.constant);
-    lightingShader.setFloat("pointLights[1].linear", programState->pointLight.linear);
-    lightingShader.setFloat("pointLights[1].quadratic", programState->pointLight.quadratic);
-    // point light 3
-    lightingShader.setVec3("pointLights[2].position", pointLightPositions[2]);
-    lightingShader.setVec3("pointLights[2].ambient", programState->pointLightAmbient);
-    lightingShader.setVec3("pointLights[2].diffuse", programState->pointLightDiffuse);
-    lightingShader.setVec3("pointLights[2].specular", programState->pointLightSpecular);
-    lightingShader.setFloat("pointLights[2].constant", programState->pointLight.constant);
-    lightingShader.setFloat("pointLights[2].linear", programState->pointLight.linear);
-    lightingShader.setFloat("pointLights[2].quadratic", programState->pointLight.quadratic);
-    // point light 4
-    lightingShader.setVec3("pointLights[3].position", pointLightPositions[3]);
-    lightingShader.setVec3("pointLights[3].ambient", programState->pointLightAmbient);
-    lightingShader.setVec3("pointLights[3].diffuse", programState->pointLightDiffuse);
-    lightingShader.setVec3("pointLights[3].specular", programState->pointLightSpecular);
-    lightingShader.setFloat("pointLights[3].constant", programState->pointLight.constant);
-    lightingShader.setFloat("pointLights[3].linear", programState->pointLight.linear);
-    lightingShader.setFloat("pointLights[3].quadratic", programState->pointLight.quadratic);
-    // point light 5
-    lightingShader.setVec3("pointLights[4].position", pointLightPositions[4]);
-    lightingShader.setVec3("pointLights[4].ambient", programState->pointLightAmbient);
-    lightingShader.setVec3("pointLights[4].diffuse", programState->pointLightDiffuse);
-    lightingShader.setVec3("pointLights[4].specular", programState->pointLightSpecular);
-    lightingShader.setFloat("pointLights[4].constant", programState->pointLight.constant);
-    lightingShader.setFloat("pointLights[4].linear", programState->pointLight.linear);
-    lightingShader.setFloat("pointLights[4].quadratic", programState->pointLight.quadratic);
-}*/
