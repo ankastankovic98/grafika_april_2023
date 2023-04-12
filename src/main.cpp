@@ -27,7 +27,7 @@ void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 unsigned int loadCubemap(vector<std::string> faces);
-
+void setLights(Shader lightingShader);
 
 void drawCity(Shader modelShader, Model cityModel);
 void drawTrees(Shader modelShader, Model treeModel);
@@ -208,7 +208,6 @@ int main() {
     Shader ourShader("resources/shaders/cityShader.vs", "resources/shaders/cityShader.fs");
     Shader skyboxShader("resources/shaders/skyboxShader.vs", "resources/shaders/skyboxShader.fs");
     Shader instanceShader("resources/shaders/instanceShader.vs", "resources/shaders/instanceShader.fs");
-    Shader objShader("resources/shaders/object_lighting.vs", "resources/shaders/object_lighting.fs");
     // load models
     // -----------
 
@@ -381,15 +380,17 @@ int main() {
         glBindVertexArray(0);
         glDepthFunc(GL_LESS); // set depth function back to default
 
-        // don't forget to enable shader before setting uniforms
-        ourShader.use();
-
         // view/projection transformations
         projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         view = programState->camera.GetViewMatrix();
+
+        ourShader.use();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
+        ourShader.setVec3("viewPosition", programState->camera.Position);
+        ourShader.setFloat("material.shininess", 30.0f);
+        setLights(ourShader);
 
         drawCity(ourShader, cityModel);
         drawTrees(ourShader, treeModel);
@@ -594,4 +595,11 @@ unsigned int loadCubemap(vector<std::string> faces) {
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     return textureID;
+}
+
+void setLights(Shader lightingShader){
+    lightingShader.setVec3("dirLight.direction", glm::vec3 (-2.2f, -10.0f, -0.3f));
+    lightingShader.setVec3("dirLight.ambient", glm::vec3(0.4f, 0.4f, 0.4f));
+    lightingShader.setVec3("dirLight.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
+    lightingShader.setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 }
