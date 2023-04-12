@@ -47,6 +47,61 @@ public:
             meshes[i].Draw(shader);
     }
 
+    void DrawInstanced(Shader &shader, int amount)
+    {
+        for(unsigned int i = 0; i < meshes.size(); i++)
+            meshes[i].DrawInstanced(shader, amount);
+    }
+
+    void Instantiate(int amount){
+        glm::mat4* modelMatrices;
+        modelMatrices = new glm::mat4[amount];
+        srand(glfwGetTime());
+
+        for(unsigned int i = 0; i < amount; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            if(i < amount / 2)
+                model = glm::translate(model, glm::vec3(15 + rand() % 80, rand() % 8 - 10, rand() % 51 - 25));
+            else
+                model = glm::translate(model, glm::vec3(-15 - rand() % 80, rand() % 16 - 5, rand() % 51 - 25));
+
+            float scale = 0.7f;
+            model = glm::scale(model, glm::vec3(scale));    // it's a bit too big for our scene, so scale it down
+            /* hocu rotaciju oko svoje ose, moram da istrazim kako
+            float rotAngle = 0;
+            model = glm::rotate(model, rotAngle, glm::vec3(1.0f, 1.0f, 1.0f));*/
+            modelMatrices[i] = model;
+        }
+
+        unsigned int buffer;
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+
+        for (unsigned int i = 0; i < meshes.size(); i++)
+        {
+            unsigned int VAO = meshes[i].VAO;
+            glBindVertexArray(VAO);
+            // set attribute pointers for matrix (4 times vec4)
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+            glEnableVertexAttribArray(4);
+            glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+            glEnableVertexAttribArray(5);
+            glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+            glEnableVertexAttribArray(6);
+            glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+            glVertexAttribDivisor(3, 1);
+            glVertexAttribDivisor(4, 1);
+            glVertexAttribDivisor(5, 1);
+            glVertexAttribDivisor(6, 1);
+
+            glBindVertexArray(0);
+        }
+    }
+
     void SetShaderTextureNamePrefix(std::string prefix) {
         for (Mesh& mesh: meshes) {
             mesh.glslIdentifierPrefix = prefix;

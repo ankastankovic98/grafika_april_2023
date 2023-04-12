@@ -30,7 +30,7 @@ unsigned int loadCubemap(vector<std::string> faces);
 void setLights(Shader lightingShader);
 
 void drawCity(Shader modelShader, Model cityModel);
-void drawTrees(Shader modelShader, Model treeModel);
+void drawTrees(Shader modelShader, Model treeModel, int amount);
 
 // settings
 const unsigned int SCR_WIDTH = 1920;
@@ -214,101 +214,57 @@ int main() {
     //Model ourModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
     Model cityModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
     cityModel.SetShaderTextureNamePrefix("material.");
-    Model windTurbineModel("resources/objects/eolic_OBJ/EolicOBJ.obj");
+
     Model treeModel("resources/objects/Tree/Hand painted Tree.obj");
     treeModel.SetShaderTextureNamePrefix("material.");
-
+    // Instancing
+    unsigned int amount = 50;
+    treeModel.Instantiate(amount);
 
     float skyboxVertices[] = {
             // positions
-            -1.0f, -1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
-            1.0f,  1.0f, -1.0f,
+            -2.0f, -2.0f, -2.0f,
+            -2.0f,  2.0f, -2.0f,
+            2.0f, -2.0f, -2.0f,
+            2.0f, -2.0f, -2.0f,
+            -2.0f,  2.0f, -2.0f,
+            2.0f,  2.0f, -2.0f,
 
-            -1.0f, -1.0f, -1.0f,
-            -1.0f, -1.0f,  1.0f,
-            -1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
-            -1.0f, -1.0f,  1.0f,
-            -1.0f,  1.0f,  1.0f,
+            -2.0f, -2.0f, -2.0f,
+            -2.0f, -2.0f,  2.0f,
+            -2.0f,  2.0f, -2.0f,
+            -2.0f,  2.0f, -2.0f,
+            -2.0f, -2.0f,  2.0f,
+            -2.0f,  2.0f,  2.0f,
 
-            1.0f, -1.0f,  1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f,  1.0f, -1.0f,
+            2.0f, -2.0f,  2.0f,
+            2.0f, -2.0f, -2.0f,
+            2.0f,  2.0f,  2.0f,
+            2.0f,  2.0f,  2.0f,
+            2.0f, -2.0f, -2.0f,
+            2.0f,  2.0f, -2.0f,
 
-            -1.0f,  1.0f,  1.0f,
-            -1.0f, -1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
-            -1.0f, -1.0f,  1.0f,
-            1.0f, -1.0f,  1.0f,
+            -2.0f,  2.0f,  2.0f,
+            -2.0f, -2.0f,  2.0f,
+            2.0f,  2.0f,  2.0f,
+            2.0f,  2.0f,  2.0f,
+            -2.0f, -2.0f,  2.0f,
+            2.0f, -2.0f,  2.0f,
 
-            1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
-            1.0f,  1.0f,  1.0f,
-            1.0f,  1.0f,  1.0f,
-            -1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f,  1.0f,
+            2.0f,  2.0f, -2.0f,
+            -2.0f,  2.0f, -2.0f,
+            2.0f,  2.0f,  2.0f,
+            2.0f,  2.0f,  2.0f,
+            -2.0f,  2.0f, -2.0f,
+            -2.0f,  2.0f,  2.0f,
 
-            -1.0f, -1.0f,  1.0f,
-            -1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f,  1.0f,
-            -1.0f, -1.0f,  1.0f
+            -2.0f, -2.0f,  2.0f,
+            -2.0f, -2.0f, -2.0f,
+            2.0f, -2.0f, -2.0f,
+            2.0f, -2.0f, -2.0f,
+            2.0f, -2.0f,  2.0f,
+            -2.0f, -2.0f,  2.0f
     };
-
-    // Instancing
-    unsigned int amount = 50;
-    glm::mat4* modelMatrices;
-    modelMatrices = new glm::mat4[amount];
-    srand(glfwGetTime());
-
-    for(unsigned int i = 0; i < amount; i++)
-    {
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(rand() % 100 - 50, 5 + rand() % 10, 3 + (rand() % 100)));
-
-        float scale = (rand() % 100) / 300.0f;
-        model = glm::scale(model, glm::vec3(scale));
-        /* hocu rotaciju oko svoje ose, moram da istrazim kako
-        float rotAngle = 0;
-        model = glm::rotate(model, rotAngle, glm::vec3(1.0f, 1.0f, 1.0f));*/
-        modelMatrices[i] = model;
-    }
-
-    unsigned int buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
-
-    for (unsigned int i = 0; i < windTurbineModel.meshes.size(); i++)
-    {
-        unsigned int VAO = windTurbineModel.meshes[i].VAO;
-        glBindVertexArray(VAO);
-        // set attribute pointers for matrix (4 times vec4)
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
-        glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
-        glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
-
-        glVertexAttribDivisor(3, 1);
-        glVertexAttribDivisor(4, 1);
-        glVertexAttribDivisor(5, 1);
-        glVertexAttribDivisor(6, 1);
-
-        glBindVertexArray(0);
-    }
 
     glFrontFace(GL_CW);
 
@@ -393,24 +349,12 @@ int main() {
         setLights(ourShader);
 
         drawCity(ourShader, cityModel);
-        drawTrees(ourShader, treeModel);
 
         instanceShader.use();
         instanceShader.setMat4("projection", projection);
         instanceShader.setMat4("view", view);
-
-        instanceShader.setInt("texture_diffuse", 0);
-        instanceShader.setInt("texture_specular", 1);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, windTurbineModel.textures_loaded[0].id);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, windTurbineModel.textures_loaded[1].id);
-
-        for (unsigned int i = 0; i < windTurbineModel.meshes.size(); i++) {
-            glBindVertexArray(windTurbineModel.meshes[i].VAO);
-            glDrawElementsInstanced(GL_TRIANGLES, windTurbineModel.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount);
-            glBindVertexArray(0);
-        }
+        setLights(instanceShader); // todo
+        drawTrees(instanceShader, treeModel, amount);
 
 
         if (programState->ImGuiEnabled)
@@ -430,9 +374,6 @@ int main() {
 
     glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteBuffers(1, &skyboxVBO);
-    for(unsigned int i = 0; i < amount; i++){
-        glDeleteVertexArrays(1, &(windTurbineModel.meshes[i].VAO));
-    }
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
     glfwTerminate();
@@ -446,20 +387,11 @@ void drawCity(Shader modelShader, Model cityModel){
     cityModel.Draw(modelShader);
 }
 
-void drawTrees(Shader modelShader, Model treeModel){
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, programState->treeOnePosition); // translate it down so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(programState->treeOneScale));    // it's a bit too big for our scene, so scale it down
-    modelShader.setMat4("model", model);
-    treeModel.Draw(modelShader);
+void drawTrees(Shader modelShader, Model treeModel, int amount){
 
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, programState->treeTwoPosition); // translate it down so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(programState->treeTwoScale));    // it's a bit too big for our scene, so scale it down
-    modelShader.setMat4("model", model);
-    treeModel.Draw(modelShader);
-
+    treeModel.DrawInstanced(modelShader, amount);
 }
+
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window) {
