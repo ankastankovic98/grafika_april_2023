@@ -28,13 +28,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 unsigned int loadCubemap(vector<std::string> faces);
 void setLights(Shader lightingShader);
+void renderQuad();
 
 void drawCity(Shader modelShader, Model cityModel);
 void drawTrees(Shader modelShader, Model treeModel, int amount);
 
 // settings
-const unsigned int SCR_WIDTH = 1920;
-const unsigned int SCR_HEIGHT = 1080;
+const unsigned int SCR_WIDTH = 1800;
+const unsigned int SCR_HEIGHT = 900;
 
 // camera
 
@@ -77,6 +78,16 @@ struct ProgramState {
     glm::vec3 pointLightAmbient = glm::vec3(0.05f, 0.05f, 0.05f);
     glm::vec3 pointLightDiffuse = glm::vec3(0.94f, 0.98f, 0.78f);
     glm::vec3 pointLightSpecular = glm::vec3(0.94f, 0.98f, 0.78f);
+
+    bool hdr = true;
+    float hdrExposure = 1.0f;
+    float hdrGamma = 2.2f;
+    bool bloom = false;
+    int effectSelected = 0;
+
+    bool cameraDebug = true;
+    bool lightsDebug = false;
+
     void SaveToFile(std::string filename);
     void LoadFromFile(std::string filename);
 };
@@ -109,7 +120,14 @@ void ProgramState::SaveToFile(std::string filename) {
         << dirLightDiffuse[2] << '\n'
         << dirLightSpecular[0] << '\n'
         << dirLightSpecular[1] << '\n'
-        << dirLightSpecular[2] << '\n';
+        << dirLightSpecular[2] << '\n'
+        << hdr << '\n'
+        << hdrExposure << '\n'
+        << hdrGamma << '\n'
+        << bloom << "\n"
+        << effectSelected << "\n"
+        << cameraDebug << "\n"
+        << lightsDebug << "\n";
 }
 
 void ProgramState::LoadFromFile(std::string filename) {
@@ -141,7 +159,14 @@ void ProgramState::LoadFromFile(std::string filename) {
            >> dirLightDiffuse[2]
            >> dirLightSpecular[0]
            >> dirLightSpecular[1]
-           >> dirLightSpecular[2];
+           >> dirLightSpecular[2]
+           >> hdr
+           >> hdrExposure
+           >> hdrGamma
+           >> bloom
+           >> effectSelected
+           >> cameraDebug
+           >> lightsDebug;
     }
 }
 
@@ -211,68 +236,96 @@ int main() {
 
     // build and compile shaders
     // -------------------------
+    Shader screenShader("resources/shaders/framebuffer.vs", "resources/shaders/framebuffer.fs");
     Shader ourShader("resources/shaders/cityShader.vs", "resources/shaders/cityShader.fs");
     Shader skyboxShader("resources/shaders/skyboxShader.vs", "resources/shaders/skyboxShader.fs");
     Shader instanceShader("resources/shaders/instanceShader.vs", "resources/shaders/instanceShader.fs");
+    Shader blurShader("resources/shaders/blur.vs", "resources/shaders/blur.fs");
     // load models
     // -----------
-
-    //Model ourModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
     Model cityModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
     cityModel.SetShaderTextureNamePrefix("material.");
-
     Model treeModel("resources/objects/Tree/Hand painted Tree.obj");
     treeModel.SetShaderTextureNamePrefix("material.");
+
+
+    float skyboxVertices[] = {
+            // positions
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+
+            1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f
+    };
+
+
+    float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+            // positions   // texCoords
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            -1.0f, -1.0f,  0.0f, 0.0f,
+            1.0f, -1.0f,  1.0f, 0.0f,
+
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            1.0f, -1.0f,  1.0f, 0.0f,
+            1.0f,  1.0f,  1.0f, 1.0f
+    };
+
+
     // Instancing
     unsigned int amount = 50;
     treeModel.Instantiate(amount);
 
-    float skyboxVertices[] = {
-            // positions
-            -2.0f, -2.0f, -2.0f,
-            -2.0f,  2.0f, -2.0f,
-            2.0f, -2.0f, -2.0f,
-            2.0f, -2.0f, -2.0f,
-            -2.0f,  2.0f, -2.0f,
-            2.0f,  2.0f, -2.0f,
-
-            -2.0f, -2.0f, -2.0f,
-            -2.0f, -2.0f,  2.0f,
-            -2.0f,  2.0f, -2.0f,
-            -2.0f,  2.0f, -2.0f,
-            -2.0f, -2.0f,  2.0f,
-            -2.0f,  2.0f,  2.0f,
-
-            2.0f, -2.0f,  2.0f,
-            2.0f, -2.0f, -2.0f,
-            2.0f,  2.0f,  2.0f,
-            2.0f,  2.0f,  2.0f,
-            2.0f, -2.0f, -2.0f,
-            2.0f,  2.0f, -2.0f,
-
-            -2.0f,  2.0f,  2.0f,
-            -2.0f, -2.0f,  2.0f,
-            2.0f,  2.0f,  2.0f,
-            2.0f,  2.0f,  2.0f,
-            -2.0f, -2.0f,  2.0f,
-            2.0f, -2.0f,  2.0f,
-
-            2.0f,  2.0f, -2.0f,
-            -2.0f,  2.0f, -2.0f,
-            2.0f,  2.0f,  2.0f,
-            2.0f,  2.0f,  2.0f,
-            -2.0f,  2.0f, -2.0f,
-            -2.0f,  2.0f,  2.0f,
-
-            -2.0f, -2.0f,  2.0f,
-            -2.0f, -2.0f, -2.0f,
-            2.0f, -2.0f, -2.0f,
-            2.0f, -2.0f, -2.0f,
-            2.0f, -2.0f,  2.0f,
-            -2.0f, -2.0f,  2.0f
-    };
-
+    // Culling
     glFrontFace(GL_CW);
+
+    // Quad VAO
+    // screen quad VAO
+    unsigned int quadVAO, quadVBO;
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     // skybox VAO
     unsigned int skyboxVAO, skyboxVBO;
@@ -296,12 +349,66 @@ int main() {
 
     unsigned int cubemapTexture = loadCubemap(faces);
 
+    unsigned int framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    // create 2 floating point color buffers (1 for normal rendering, other for brightness threshold values)
+    unsigned int colorBuffers[2];
+    glGenTextures(2, colorBuffers);
+    for (unsigned int i = 0; i < 2; i++)
+    {
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        // attach texture to framebuffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
+    }
+
+    // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT); // use a single renderbuffer object for both a depth AND stencil buffer.
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
+    // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
+    // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: RBO Framebuffer is not complete!" << endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // ping-pong-framebuffer for blurring
+    unsigned int pingpongFBO[2];
+    unsigned int pingpongColorbuffers[2];
+    glGenFramebuffers(2, pingpongFBO);
+    glGenTextures(2, pingpongColorbuffers);
+    for (unsigned int i = 0; i < 2; i++) {
+        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+        glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongColorbuffers[i], 0);
+        // also check if framebuffers are complete (no need for depth buffer)
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            std::cout << "ERROR::FRAMEBUFFER:: Pingpong Framebuffer not complete!" << std::endl;
+    }
+    // --------------------------------------------------------
+
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
 
     ourShader.use();
     ourShader.setInt("material.diffuse", 0);
     ourShader.setInt("material.specular", 1);
+    blurShader.use();
+    blurShader.setInt("image", 0);
 
 
     // render loop
@@ -320,6 +427,12 @@ int main() {
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+        // bind to framebuffer and draw scene as we normally would to color texture
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glEnable(GL_DEPTH_TEST);
+        // make sure we clear the framebuffer's content
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // render
         // ------
@@ -361,6 +474,48 @@ int main() {
         instanceShader.setMat4("view", view);
         drawTrees(instanceShader, treeModel, amount);
 
+        // Reset wireframe drawing so that it doesn't try to draw quads
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        bool horizontal = true, first_iteration = true;
+        unsigned int amount = 10;
+        blurShader.use();
+        for (unsigned int i = 0; i < amount; i++) {
+            glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+            blurShader.setInt("horizontal", horizontal);
+            glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);
+            renderQuad();
+            horizontal = !horizontal;
+            if (first_iteration)
+                first_iteration = false;
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // Bind back to default framebuffer and draw a quad plane with the attached framebuffer color texture
+        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
+        // Clear all relevant buffers
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Render the quad plane on default framebuffer
+        screenShader.use();
+        screenShader.setInt("bloom", programState->bloom);
+        screenShader.setInt("hdr", programState->hdr);
+        screenShader.setFloat("exposure", programState->hdrExposure);
+        screenShader.setFloat("gamma", programState->hdrGamma);
+        screenShader.setInt("option", programState->effectSelected);
+        // Bind bloom and non bloom
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
+
+        renderQuad();
+        //glBindVertexArray(quadVAO);
+        //glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+        //glDrawArrays(GL_TRIANGLES, 0, 6);
+
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
@@ -396,6 +551,38 @@ void drawTrees(Shader modelShader, Model treeModel, int amount){
 
     treeModel.DrawInstanced(modelShader, amount);
 }
+
+// renderQuad() renders a 1x1 XY quad in NDC
+// -----------------------------------------
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+    if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+                // positions        // texture Coords
+                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+                1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+                1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -451,29 +638,39 @@ void DrawImGui(ProgramState *programState) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-
     {
         static float f = 0.0f;
-        ImGui::Begin("Setup window");
+        ImGui::Begin("Osnovno");
         ImGui::Text("Podesavanja");
-        ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
+        ImGui::Checkbox("Izmena svetla", &programState->lightsDebug);
+        ImGui::Checkbox("Informacije o kameri", &programState->cameraDebug);
 
-        ImGui::DragFloat3("City position", (float*)&programState->cityPosition);
-        ImGui::DragFloat("City scale", &programState->cityScale, 0.05, 0.1, 20.0);
+        ImGui::DragFloat3("Pozicija grada", (float*)&programState->cityPosition);
+        ImGui::DragFloat("Velicina grada", &programState->cityScale, 0.05, 0.1, 20.0);
 
-        ImGui::Text("Effects");
+        ImGui::Text("HDR");
+        ImGui::Checkbox("HDR", &programState->hdr);
+        if(programState->hdr){
+            ImGui::SliderFloat("HDR Exposure", &programState->hdrExposure, 0.0f, 5.0f);
+            ImGui::SliderFloat("HDR Gamma", &programState->hdrGamma, 0.0f, 5.0f);
+            ImGui::Checkbox("Bloom", &programState->bloom);
+        }
+        ImGui::Text("Efekti");
         ImGui::Checkbox("Draw Wireframe", &programState->wireframe);
+        ImGui::RadioButton("No Effect", &programState->effectSelected, 0);
+        ImGui::RadioButton("Blur", &programState->effectSelected, 1);
 
+        ImGui::End();
+    }
+    if(programState->lightsDebug){
         ImGui::Text("Directional light");
         ImGui::DragFloat3("Dir Direction", (float*)&programState->dirLightDirection, 0.05f, -1.0f, 1.0f);
         ImGui::DragFloat3("Dir Ambient", (float*)&programState->dirLightAmbient, 0.05f, -1.0f, 1.0f);
         ImGui::DragFloat3("Dir Diffuse", (float*)&programState->dirLightDiffuse, 0.05f, -1.0f, 1.0f);
         ImGui::DragFloat3("Dir Specular", (float*)&programState->dirLightSpecular, 0.05f, -1.0f, 1.0f);
-
-        ImGui::End();
     }
 
-    {
+    if(programState->cameraDebug){
         ImGui::Begin("Camera info");
         const Camera& c = programState->camera;
         ImGui::Text("Camera position: (%f, %f, %f)", c.Position.x, c.Position.y, c.Position.z);
@@ -497,8 +694,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS){
+        programState->hdr = !programState->hdr;
+        std::cout << "HDR - " << (programState->hdr  ? "ON" : "OFF") << '\n';
+    }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS){
+        programState->bloom = !programState->bloom;
+        std::cout << "Bloom - " << (programState->bloom  ? "ON" : "OFF") << '\n';
+    }
 }
-
 
 unsigned int loadCubemap(vector<std::string> faces) {
     unsigned int textureID;
@@ -570,5 +774,4 @@ void setLights(Shader lightingShader){
     lightingShader.setVec3("spotlight.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
     lightingShader.setVec3("spotlight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
     lightingShader.setVec3("spotlight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-
 }
