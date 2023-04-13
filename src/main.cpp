@@ -128,6 +128,7 @@ void ProgramState::SaveToFile(std::string filename) {
         << effectSelected << "\n"
         << cameraDebug << "\n"
         << lightsDebug << "\n";
+
 }
 
 void ProgramState::LoadFromFile(std::string filename) {
