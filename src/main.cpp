@@ -469,14 +469,6 @@ void DrawImGui(ProgramState *programState) {
         ImGui::DragFloat3("Dir Ambient", (float*)&programState->dirLightAmbient, 0.05f, -1.0f, 1.0f);
         ImGui::DragFloat3("Dir Diffuse", (float*)&programState->dirLightDiffuse, 0.05f, -1.0f, 1.0f);
         ImGui::DragFloat3("Dir Specular", (float*)&programState->dirLightSpecular, 0.05f, -1.0f, 1.0f);
-        ImGui::Text("Point lights");
-        ImGui::DragFloat3("Point ", (float*)&programState->pointLightPosition);
-        ImGui::DragFloat3("Point Ambient", (float*)&programState->pointLightAmbient, 0.05f, -1.0f, 1.0f);
-        ImGui::DragFloat3("Point Diffuse", (float*)&programState->pointLightDiffuse, 0.05f, -1.0f, 1.0f);
-        ImGui::DragFloat3("Point Specular", (float*)&programState->pointLightSpecular, 0.05f, -1.0f, 1.0f);
-        ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
-        ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
-        ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
 
         ImGui::End();
     }
@@ -563,7 +555,7 @@ void setLights(Shader lightingShader){
     lightingShader.setVec3("pointLights[1].diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
     lightingShader.setVec3("pointLights[1].specular", glm::vec3(1.0f, 1.0f, 1.0f));
     lightingShader.setFloat("pointLights[1].constant", 0.05f);
-    lightingShader.setFloat("pointLights[1].linear", 0.02f);
+    lightingShader.setFloat("pointLights[1].linear", 0.01f);
     lightingShader.setFloat("pointLights[1].quadratic", 0.0f);
     lightingShader.setVec3("pointLights[1].lightColor", glm::vec3(1.0, 0.0, 0.0f));
 
