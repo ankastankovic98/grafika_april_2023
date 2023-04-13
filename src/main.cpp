@@ -64,17 +64,20 @@ struct ProgramState {
     bool CameraMouseMovementUpdateEnabled = false;
     glm::vec3 cityPosition = glm::vec3(0.0f);
     float cityScale = 1.0f;
-    glm::vec3 treeOnePosition = glm::vec3(1.0f);
-    float treeOneScale = 0.10f;
-    glm::vec3 treeTwoPosition = glm::vec3(1.0f);
-    float treeTwoScale = 0.10f;
     bool wireframe = false;
     PointLight pointLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
 
+    glm::vec3 dirLightDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
+    glm::vec3 dirLightAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
+    glm::vec3 dirLightDiffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+    glm::vec3 dirLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec3 pointLightPosition = glm::vec3(8.5f, 3.2f, 4.5f);
+    glm::vec3 pointLightAmbient = glm::vec3(0.05f, 0.05f, 0.05f);
+    glm::vec3 pointLightDiffuse = glm::vec3(0.94f, 0.98f, 0.78f);
+    glm::vec3 pointLightSpecular = glm::vec3(0.94f, 0.98f, 0.78f);
     void SaveToFile(std::string filename);
-
     void LoadFromFile(std::string filename);
 };
 
@@ -88,21 +91,25 @@ void ProgramState::SaveToFile(std::string filename) {
         << cityPosition[1] << '\n'
         << cityPosition[2] << '\n'
         << cityScale << '\n'
-        << treeOnePosition[0] << '\n'
-        << treeOnePosition[1] << '\n'
-        << treeOnePosition[2] << '\n'
-        << treeOneScale << '\n'
-        << treeTwoPosition[0] << '\n'
-        << treeTwoPosition[1] << '\n'
-        << treeTwoPosition[2] << '\n'
-        << treeTwoScale << '\n'
         << camera.Position.x << '\n'
         << camera.Position.y << '\n'
         << camera.Position.z << '\n'
         << camera.Front.x << '\n'
         << camera.Front.y << '\n'
         << camera.Front.z << '\n'
-        << wireframe << '\n';
+        << wireframe << '\n'
+        << dirLightDirection[0] << '\n'
+        << dirLightDirection[1] << '\n'
+        << dirLightDirection[2] << '\n'
+        << dirLightAmbient[0] << '\n'
+        << dirLightAmbient[1] << '\n'
+        << dirLightAmbient[2] << '\n'
+        << dirLightDiffuse[0] << '\n'
+        << dirLightDiffuse[1] << '\n'
+        << dirLightDiffuse[2] << '\n'
+        << dirLightSpecular[0] << '\n'
+        << dirLightSpecular[1] << '\n'
+        << dirLightSpecular[2] << '\n';
 }
 
 void ProgramState::LoadFromFile(std::string filename) {
@@ -116,30 +123,29 @@ void ProgramState::LoadFromFile(std::string filename) {
            >> cityPosition[1]
            >> cityPosition[2]
            >> cityScale
-           >> treeOnePosition[0]
-           >> treeOnePosition[1]
-           >> treeOnePosition[2]
-           >> treeOneScale
-           >> treeTwoPosition[0]
-           >> treeTwoPosition[1]
-           >> treeTwoPosition[2]
-           >> treeTwoScale
            >> camera.Position.x
            >> camera.Position.y
            >> camera.Position.z
            >> camera.Front.x
            >> camera.Front.y
            >> camera.Front.z
-           >> pointLight.constant
-           >> pointLight.linear
-           >> pointLight.quadratic
-           >> wireframe;
+           >> wireframe
+           >> dirLightDirection[0]
+           >> dirLightDirection[1]
+           >> dirLightDirection[2]
+           >> dirLightAmbient[0]
+           >> dirLightAmbient[1]
+           >> dirLightAmbient[2]
+           >> dirLightDiffuse[0]
+           >> dirLightDiffuse[1]
+           >> dirLightDiffuse[2]
+           >> dirLightSpecular[0]
+           >> dirLightSpecular[1]
+           >> dirLightSpecular[2];
     }
 }
 
 ProgramState *programState;
-
-void drawBackpack(Shader modelShader, Model backpackModel);
 
 void DrawImGui(ProgramState *programState);
 
@@ -353,7 +359,6 @@ int main() {
         instanceShader.use();
         instanceShader.setMat4("projection", projection);
         instanceShader.setMat4("view", view);
-        setLights(instanceShader); // todo
         drawTrees(instanceShader, treeModel, amount);
 
 
@@ -450,22 +455,28 @@ void DrawImGui(ProgramState *programState) {
     {
         static float f = 0.0f;
         ImGui::Begin("Setup window");
-        ImGui::Text("Hello text");
-        ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
+        ImGui::Text("Podesavanja");
         ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
 
         ImGui::DragFloat3("City position", (float*)&programState->cityPosition);
         ImGui::DragFloat("City scale", &programState->cityScale, 0.05, 0.1, 20.0);
 
-        ImGui::DragFloat3("Tree one position", (float*)&programState->treeOnePosition);
-        ImGui::DragFloat("Tree one scale", &programState->treeOneScale, 0.05, 0.1, 20.0);
-
-        ImGui::DragFloat3("Tree two position", (float*)&programState->treeTwoPosition);
-        ImGui::DragFloat("Tree two scale", &programState->treeTwoScale, 0.05, 0.1, 20.0);
-
-
         ImGui::Text("Effects");
         ImGui::Checkbox("Draw Wireframe", &programState->wireframe);
+
+        ImGui::Text("Directional light");
+        ImGui::DragFloat3("Dir Direction", (float*)&programState->dirLightDirection, 0.05f, -1.0f, 1.0f);
+        ImGui::DragFloat3("Dir Ambient", (float*)&programState->dirLightAmbient, 0.05f, -1.0f, 1.0f);
+        ImGui::DragFloat3("Dir Diffuse", (float*)&programState->dirLightDiffuse, 0.05f, -1.0f, 1.0f);
+        ImGui::DragFloat3("Dir Specular", (float*)&programState->dirLightSpecular, 0.05f, -1.0f, 1.0f);
+        ImGui::Text("Point lights");
+        ImGui::DragFloat3("Point ", (float*)&programState->pointLightPosition);
+        ImGui::DragFloat3("Point Ambient", (float*)&programState->pointLightAmbient, 0.05f, -1.0f, 1.0f);
+        ImGui::DragFloat3("Point Diffuse", (float*)&programState->pointLightDiffuse, 0.05f, -1.0f, 1.0f);
+        ImGui::DragFloat3("Point Specular", (float*)&programState->pointLightSpecular, 0.05f, -1.0f, 1.0f);
+        ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
+        ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
+        ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
 
         ImGui::End();
     }
@@ -530,8 +541,32 @@ unsigned int loadCubemap(vector<std::string> faces) {
 }
 
 void setLights(Shader lightingShader){
-    lightingShader.setVec3("dirLight.direction", glm::vec3 (-2.2f, -10.0f, -0.3f));
-    lightingShader.setVec3("dirLight.ambient", glm::vec3(0.4f, 0.4f, 0.4f));
-    lightingShader.setVec3("dirLight.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
-    lightingShader.setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+    //directional light
+    lightingShader.setVec3("dirLight.direction", programState->dirLightDirection);
+    lightingShader.setVec3("dirLight.ambient", programState->dirLightAmbient);
+    lightingShader.setVec3("dirLight.diffuse", programState->dirLightDiffuse);
+    lightingShader.setVec3("dirLight.specular", programState->dirLightSpecular);
+
+    // point light 1
+    /*lightingShader.setVec3("pointLights[0].position", programState->pointLightPosition);
+    lightingShader.setVec3("pointLights[0].ambient", programState->pointLightAmbient);
+    lightingShader.setVec3("pointLights[0].diffuse", programState->pointLightDiffuse);
+    lightingShader.setVec3("pointLights[0].specular", programState->pointLightSpecular);
+    lightingShader.setFloat("pointLights[0].constant", programState->pointLight.constant);
+    lightingShader.setFloat("pointLights[0].linear", programState->pointLight.linear);
+    lightingShader.setFloat("pointLights[0].quadratic", programState->pointLight.quadratic);
+    lightingShader.setVec3("pointLights[0].lightColor", glm::vec3(1.0f, 1.0f, 1.0f));*/
+
+    //spotlight
+    /*lightingShader.setVec3("spotlight.position", glm::vec3 (-0.2f, -1.0f, -0.3f));
+    lightingShader.setVec3("spotlight.direction", programState->camera.Front);
+    lightingShader.setFloat("spotlight.cutOff", glm::cos(glm::radians(12.5f)));
+    lightingShader.setFloat("spotlight.outerCutOff", glm::cos(glm::radians(16.5f)));
+    lightingShader.setFloat("spotlight.constant", 1.0f);
+    lightingShader.setFloat("spotlight.linear", 0.35f);
+    lightingShader.setFloat("spotlight.quadratic", 0.44f);
+    lightingShader.setVec3("spotlight.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
+    lightingShader.setVec3("spotlight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+    lightingShader.setVec3("spotlight.specular", glm::vec3(1.0f, 1.0f, 1.0f));*/
+
 }
