@@ -65,6 +65,15 @@ void main()
                 col += sampleTex[i] * blurKernel[i];
             FragColor = vec4(col, 1.0);
             break;
+
+          // Grayscale
+          case 2:
+          // hdrColor = texture(screenTexture, TexCoords);
+          vec3 hdrColor = genHdrColor();
+          float average = 0.2126 * hdrColor.r + 0.7152 * hdrColor.g + 0.0722 * hdrColor.b;
+          FragColor = vec4(1.0f *  average, 0.43f * average, 0.78f * average, 1.0);
+          break;
+
     }
 }
 

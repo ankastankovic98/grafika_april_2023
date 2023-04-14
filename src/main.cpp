@@ -660,6 +660,7 @@ void DrawImGui(ProgramState *programState) {
         ImGui::Checkbox("Draw Wireframe", &programState->wireframe);
         ImGui::RadioButton("No Effect", &programState->effectSelected, 0);
         ImGui::RadioButton("Blur", &programState->effectSelected, 1);
+        ImGui::RadioButton("Violet", &programState->effectSelected, 2);
 
         ImGui::End();
     }
