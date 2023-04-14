@@ -27,10 +27,10 @@ void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 unsigned int loadCubemap(vector<std::string> faces);
-void setLights(Shader lightingShader);
+void setLights(Shader lightingShader, float currentFrame);
 void renderQuad();
 
-void drawCity(Shader modelShader, Model cityModel, Model stoneBridge);
+void drawCity(Shader modelShader, Model cityModel, Model stoneBridge, Model stonePlatformB);
 void drawTrees(Shader modelShader, Model treeModel, int amount);
 
 // settings
@@ -258,6 +258,8 @@ int main() {
     cityModel.SetShaderTextureNamePrefix("material.");
     Model stoneBridge("resources/objects/Stone_Bridge_Obj/Stone Bridge_Obj.obj");
     stoneBridge.SetShaderTextureNamePrefix("material.");
+    Model stonePlatformB("resources/objects/StonePlatform_Obj/StonePlatform_B.obj");
+    stoneBridge.SetShaderTextureNamePrefix("material.");
     Model treeModel("resources/objects/Tree/Hand painted Tree.obj");
     treeModel.SetShaderTextureNamePrefix("material.");
 
@@ -478,9 +480,9 @@ int main() {
         ourShader.setMat4("view", view);
         ourShader.setVec3("viewPosition", programState->camera.Position);
         ourShader.setFloat("material.shininess", 30.0f);
-        setLights(ourShader);
+        setLights(ourShader, currentFrame);
 
-        drawCity(ourShader, cityModel, stoneBridge);
+        drawCity(ourShader, cityModel, stoneBridge, stonePlatformB);
 
         instanceShader.use();
         instanceShader.setMat4("projection", projection);
@@ -552,7 +554,8 @@ int main() {
     glfwTerminate();
     return 0;
 }
-void drawCity(Shader modelShader, Model cityModel, Model stoneBridge){
+void drawCity(Shader modelShader, Model cityModel, Model stoneBridge, Model stonePlatformB){
+
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, programState->cityPosition); // translate it down so it's at the center of the scene
     model = glm::scale(model, glm::vec3(programState->cityScale));    // it's a bit too big for our scene, so scale it down
@@ -561,21 +564,22 @@ void drawCity(Shader modelShader, Model cityModel, Model stoneBridge){
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(programState->bridgePossition)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(1.0f));    // it's a bit too big for our scene, so scale it down
+    modelShader.setMat4("model", model);
+    stonePlatformB.Draw(modelShader);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(programState->bridgePossition + glm::vec3(-30.f, -5.0f, 0.0f))); // translate it down so it's at the center of the scene
     model = glm::scale(model, glm::vec3(programState->bridgeScale));    // it's a bit too big for our scene, so scale it down
     modelShader.setMat4("model", model);
     stoneBridge.Draw(modelShader);
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(programState->bridgePossition + glm::vec3(50.f, -2.0f, 0.0f))); // translate it down so it's at the center of the scene
+    model = glm::translate(model, glm::vec3(programState->bridgePossition + glm::vec3(30.f, -2.0f, 0.0f))); // translate it down so it's at the center of the scene
     model = glm::scale(model, glm::vec3(programState->bridgeScale));    // it's a bit too big for our scene, so scale it down
     modelShader.setMat4("model", model);
     stoneBridge.Draw(modelShader);
 
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(programState->bridgePossition + glm::vec3(-50.f, -5.0f, 0.0f))); // translate it down so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(programState->bridgeScale));    // it's a bit too big for our scene, so scale it down
-    modelShader.setMat4("model", model);
-    stoneBridge.Draw(modelShader);
 }
 
 void drawTrees(Shader modelShader, Model treeModel, int amount){
@@ -772,7 +776,7 @@ unsigned int loadCubemap(vector<std::string> faces) {
     return textureID;
 }
 
-void setLights(Shader lightingShader){
+void setLights(Shader lightingShader, float currentFrame){
     //directional light
     lightingShader.setVec3("dirLight.direction", programState->dirLightDirection);
     lightingShader.setVec3("dirLight.ambient", programState->dirLightAmbient);
@@ -780,23 +784,23 @@ void setLights(Shader lightingShader){
     lightingShader.setVec3("dirLight.specular", programState->dirLightSpecular);
 
     // point light blue
-    lightingShader.setVec3("pointLights[0].position", glm::vec3(9.0f, 15.0f, -2.0f));
+    lightingShader.setVec3("pointLights[0].position",  glm::vec3(5.0 * cos(currentFrame), 5.0f * sin(currentFrame), 2.0 * cos(currentFrame)));
     lightingShader.setVec3("pointLights[0].ambient", glm::vec3(0.5f, 0.5f, 0.5f));
     lightingShader.setVec3("pointLights[0].diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
     lightingShader.setVec3("pointLights[0].specular", glm::vec3(1.0f, 1.0f, 1.0f));
     lightingShader.setFloat("pointLights[0].constant", 0.05f);
     lightingShader.setFloat("pointLights[0].linear", 0.02f);
-    lightingShader.setFloat("pointLights[0].quadratic", 0.0009f);
+    lightingShader.setFloat("pointLights[0].quadratic", 0.001f);
     lightingShader.setVec3("pointLights[0].lightColor", glm::vec3(0.0, 0.0, 1.0f));
 
     // point light red
-    lightingShader.setVec3("pointLights[1].position", glm::vec3(-9.0f, 15.0f, -2.0f));
+    lightingShader.setVec3("pointLights[1].position", glm::vec3 (-5.0 * sin(currentFrame), 3.0f * cos(currentFrame), 4.0 * sin(currentFrame)));
     lightingShader.setVec3("pointLights[1].ambient", glm::vec3(0.5f, 0.5f, 0.5f));
     lightingShader.setVec3("pointLights[1].diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
     lightingShader.setVec3("pointLights[1].specular", glm::vec3(1.0f, 1.0f, 1.0f));
     lightingShader.setFloat("pointLights[1].constant", 0.05f);
     lightingShader.setFloat("pointLights[1].linear", 0.02f);
-    lightingShader.setFloat("pointLights[1].quadratic", 0.0009f);
+    lightingShader.setFloat("pointLights[1].quadratic", 0.001f);
     lightingShader.setVec3("pointLights[1].lightColor", glm::vec3(1.0, 0.0, 0.0f));
 
     //spotlight
