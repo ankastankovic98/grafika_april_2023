@@ -1,11 +1,23 @@
-# project_base
-Prazan projekat sa pratećim bibliotekama koje koristimo na času. 
+# Viseci vrtovi
+Projekat iz predmeta Racunarska grafika na Matematickom faultetu. 
+
+Skolska godina 2022/2023.
 
 # Uputstvo
-1. `git clone https://github.com/matf-racunarska-grafika/project_base.git`
-2. CLion -> Open -> path/to/my/project_base
-3. Main se nalazi u src/main.cpp
-4. Cpp fajlovi idu u src folder
-5. Zaglavlja (h i hpp) fajlovi idu u include
-6. Šejderi idu u folder shaders. `Vertex shader` ima ekstenziju `.vs`, `fragment shader` ima ekstenziju `.fs`
-7. ALT+SHIFT+F10 -> project_base -> run
+`git@github.com:ankastankovic98/grafika_april_2023.git`
+
+-Pomeranje kamere WSAD.
+
+-Pritiskom na dugme H aktivira se HDR efekat.
+
+-Pritiskom na dugme B aktivira se Bloom efekat.
+
+-Parematar gama i ekspoziciju za HDR efekat moguce je dodatno podesavatai pomocu GUI interfejsa koji se aktivira komandnom SHIFT + F1.
+
+-Koriscenjem GUI interfejsa moguce je podesavatai izvor direkcionog svetla na sceni, kao i podesavanja kamere.
+
+-Osim HDR efekta moguce je izabrati i dodatne efekte koji ce se primeniti na sceni: 
+    -Blur '\n'
+    -"Ruzicasti svet" '\n'    
+    -Iscrtavanje linijama '\n'
+
