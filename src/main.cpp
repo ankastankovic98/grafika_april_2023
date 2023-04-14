@@ -30,7 +30,7 @@ unsigned int loadCubemap(vector<std::string> faces);
 void setLights(Shader lightingShader);
 void renderQuad();
 
-void drawCity(Shader modelShader, Model cityModel);
+void drawCity(Shader modelShader, Model cityModel, Model stoneBridge);
 void drawTrees(Shader modelShader, Model treeModel, int amount);
 
 // settings
@@ -65,6 +65,8 @@ struct ProgramState {
     bool CameraMouseMovementUpdateEnabled = false;
     glm::vec3 cityPosition = glm::vec3(0.0f);
     float cityScale = 1.0f;
+    glm::vec3 bridgePossition = glm::vec3(0.0f);
+    float bridgeScale = 0.5f;
     bool wireframe = false;
     PointLight pointLight;
     ProgramState()
@@ -127,7 +129,11 @@ void ProgramState::SaveToFile(std::string filename) {
         << bloom << "\n"
         << effectSelected << "\n"
         << cameraDebug << "\n"
-        << lightsDebug << "\n";
+        << lightsDebug << "\n"
+        << bridgePossition[0] << '\n'
+        << bridgePossition[1] << '\n'
+        << bridgePossition[2] << '\n'
+        << bridgeScale << '\n';
 
 }
 
@@ -167,7 +173,11 @@ void ProgramState::LoadFromFile(std::string filename) {
            >> bloom
            >> effectSelected
            >> cameraDebug
-           >> lightsDebug;
+           >> lightsDebug
+           >> bridgePossition[0]
+           >> bridgePossition[1]
+           >> bridgePossition[2]
+           >> bridgeScale;
     }
 }
 
@@ -246,6 +256,8 @@ int main() {
     // -----------
     Model cityModel("resources/objects/SH-Cartoon/SH-Cartoon.obj");
     cityModel.SetShaderTextureNamePrefix("material.");
+    Model stoneBridge("resources/objects/Stone_Bridge_Obj/Stone Bridge_Obj.obj");
+    stoneBridge.SetShaderTextureNamePrefix("material.");
     Model treeModel("resources/objects/Tree/Hand painted Tree.obj");
     treeModel.SetShaderTextureNamePrefix("material.");
 
@@ -468,7 +480,7 @@ int main() {
         ourShader.setFloat("material.shininess", 30.0f);
         setLights(ourShader);
 
-        drawCity(ourShader, cityModel);
+        drawCity(ourShader, cityModel, stoneBridge);
 
         instanceShader.use();
         instanceShader.setMat4("projection", projection);
@@ -540,12 +552,30 @@ int main() {
     glfwTerminate();
     return 0;
 }
-void drawCity(Shader modelShader, Model cityModel){
+void drawCity(Shader modelShader, Model cityModel, Model stoneBridge){
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, programState->cityPosition); // translate it down so it's at the center of the scene
     model = glm::scale(model, glm::vec3(programState->cityScale));    // it's a bit too big for our scene, so scale it down
     modelShader.setMat4("model", model);
     cityModel.Draw(modelShader);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(programState->bridgePossition)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(programState->bridgeScale));    // it's a bit too big for our scene, so scale it down
+    modelShader.setMat4("model", model);
+    stoneBridge.Draw(modelShader);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(programState->bridgePossition + glm::vec3(50.f, -2.0f, 0.0f))); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(programState->bridgeScale));    // it's a bit too big for our scene, so scale it down
+    modelShader.setMat4("model", model);
+    stoneBridge.Draw(modelShader);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(programState->bridgePossition + glm::vec3(-50.f, -5.0f, 0.0f))); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(programState->bridgeScale));    // it's a bit too big for our scene, so scale it down
+    modelShader.setMat4("model", model);
+    stoneBridge.Draw(modelShader);
 }
 
 void drawTrees(Shader modelShader, Model treeModel, int amount){
@@ -649,6 +679,10 @@ void DrawImGui(ProgramState *programState) {
         ImGui::DragFloat3("Pozicija grada", (float*)&programState->cityPosition);
         ImGui::DragFloat("Velicina grada", &programState->cityScale, 0.05, 0.1, 20.0);
 
+        ImGui::DragFloat3("Pozicija mosta", (float*)&programState->bridgePossition);
+        ImGui::DragFloat("Velicina mosta", &programState->bridgeScale, 0.05, 0.1, 20.0);
+
+
         ImGui::Text("HDR");
         ImGui::Checkbox("HDR", &programState->hdr);
         if(programState->hdr){
@@ -751,8 +785,8 @@ void setLights(Shader lightingShader){
     lightingShader.setVec3("pointLights[0].diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
     lightingShader.setVec3("pointLights[0].specular", glm::vec3(1.0f, 1.0f, 1.0f));
     lightingShader.setFloat("pointLights[0].constant", 0.05f);
-    lightingShader.setFloat("pointLights[0].linear", 0.001f);
-    lightingShader.setFloat("pointLights[0].quadratic", 0.0f);
+    lightingShader.setFloat("pointLights[0].linear", 0.02f);
+    lightingShader.setFloat("pointLights[0].quadratic", 0.0009f);
     lightingShader.setVec3("pointLights[0].lightColor", glm::vec3(0.0, 0.0, 1.0f));
 
     // point light red
@@ -761,8 +795,8 @@ void setLights(Shader lightingShader){
     lightingShader.setVec3("pointLights[1].diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
     lightingShader.setVec3("pointLights[1].specular", glm::vec3(1.0f, 1.0f, 1.0f));
     lightingShader.setFloat("pointLights[1].constant", 0.05f);
-    lightingShader.setFloat("pointLights[1].linear", 0.01f);
-    lightingShader.setFloat("pointLights[1].quadratic", 0.0f);
+    lightingShader.setFloat("pointLights[1].linear", 0.02f);
+    lightingShader.setFloat("pointLights[1].quadratic", 0.0009f);
     lightingShader.setVec3("pointLights[1].lightColor", glm::vec3(1.0, 0.0, 0.0f));
 
     //spotlight

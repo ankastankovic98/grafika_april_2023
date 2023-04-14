@@ -1,0 +1,12 @@
+# Created with Anim8or 1.00
+# Object "Stone Bridge":
+
+newmtl Stone_Bridge
+Ka 0.141 0.141 0.141
+Kd 0.49 0.49 0.49
+Ks 0.247 0.247 0.247
+Ns 238.6
+map_Kd StoneBridge_Base-Diffuse.png
+map_Ks StoneBridge_Base-Specular.png
+
+
