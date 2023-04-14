@@ -10,21 +10,22 @@ Osim ovih elemenata na sceni se nalaze i kameni mostovi.
 Na sceni su osim, direkcionog svetla implementirana i dva pokretna izvora svetlosti.
 Jedan izvor emituje svetlost plave a drugi crvene boje. Njihovim kombinovanjem nastaje bogat spekatr nijansi osvetljenja koji se najbolje uocava na kamenim elementima scene.
 
-# Uputstvo
+# Uputstva:
 `git@github.com:ankastankovic98/grafika_april_2023.git`
 
--Pomeranje kamere WSAD.
+-Pomeranje kamere `W` `S` `A` `D`.
 
--Pritiskom na dugme H aktivira se HDR efekat.
+-Pritiskom na dugme `H` aktivira se HDR efekat.
 
--Pritiskom na dugme B aktivira se Bloom efekat.
+-Pritiskom na dugme `B` aktivira se Bloom efekat.
 
--Parematar gama i ekspoziciju za HDR efekat moguce je dodatno podesavatai pomocu GUI interfejsa koji se aktivira pritiskom na F1.
+-Parematar gama i ekspoziciju za HDR efekat moguce je dodatno podesavatai pomocu GUI interfejsa koji se aktivira pritiskom na `F1`.
 
--Koriscenjem GUI interfejsa moguce je podesavatai izvor direkcionog svetla na sceni, kao i podesavanja kamere.
+-Moguce je podesavatai izvor direkcionog svetla na sceni, kao i podesavanja kamere pomocu GUIa.
 
 -Osim HDR efekta moguce je izabrati i dodatne efekte koji ce se primeniti na sceni: 
-    -Blur '\n'
-    -"Ruzicasti svet" '\n'    
-    -Iscrtavanje linijama '\n'
+    
+    - Blur
+    - Ruzicasti svet
+    - Iscrtavanje linijama
 
