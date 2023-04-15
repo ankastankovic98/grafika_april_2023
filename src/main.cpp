@@ -804,14 +804,15 @@ void setLights(Shader lightingShader, float currentFrame){
     lightingShader.setVec3("pointLights[1].lightColor", glm::vec3(1.0, 0.0, 0.0f));
 
     //spotlight
-    lightingShader.setVec3("spotlight.position", glm::vec3 (0.0f, -5.0f, 0.0f));
-    lightingShader.setVec3("spotlight.direction", glm::vec3(0.0f, 1.0f, 0.0f));
+    lightingShader.setVec3("spotlight.position", glm::vec3 (50.0f, 2.0f, 0.0f));
+    lightingShader.setVec3("spotlight.direction", glm::vec3(0.0f, 0.0f, 0.0f));
     lightingShader.setFloat("spotlight.cutOff", glm::cos(glm::radians(2.5f)));
     lightingShader.setFloat("spotlight.outerCutOff", glm::cos(glm::radians(6.5f)));
     lightingShader.setFloat("spotlight.constant", 0.05f);
-    lightingShader.setFloat("spotlight.linear", 0.0f);
-    lightingShader.setFloat("spotlight.quadratic", 0.0f);
-    lightingShader.setVec3("spotlight.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
-    lightingShader.setVec3("spotlight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+    lightingShader.setFloat("spotlight.linear", 0.01f);
+    lightingShader.setFloat("spotlight.quadratic", 0.09f);
+    lightingShader.setVec3("spotlight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+    lightingShader.setVec3("spotlight.diffuse", glm::vec3(0.9f, 0.9f, 0.9f));
     lightingShader.setVec3("spotlight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+    lightingShader.setVec3("spotlight.color", glm::vec3(1.0f, 1.0f, 1.0f));
 }
