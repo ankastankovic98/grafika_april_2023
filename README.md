@@ -11,11 +11,11 @@ i materijali sa [LearnOpenGL](https://learnopengl.com/).
 ---------------------------------------
 
 # Opis
-Projekat je implementacija staticne scene. Srediste scene predstavlja model grada. Oko njega su prikazani instancirani modeli lebdece vegetacije. 
-Osim ovih elemenata na sceni se nalaze i kameni mostovi.
+Projekat je implementacija staticne scene. Srediste scene predstavlja model grada. Oko njega su prikazani instancirani modeli drveta. 
+Osim ovih elemenata na sceni se nalaze i kameni mostovi i platforme.
 
 Na sceni su osim, direkcionog svetla implementirana i dva pokretna izvora svetlosti.
-Jedan izvor emituje svetlost plave a drugi crvene boje. Njihovim kombinovanjem nastaje bogat spekatr nijansi osvetljenja koji se najbolje uocava na kamenim elementima scene.
+Jedan izvor emituje svetlost plave, a drugi crvene boje. Njihovim kombinovanjem nastaje bogat spekatr nijansi osvetljenja koji se najbolje uocava na kamenim elementima scene.
 
 ---------------------------------------
 
