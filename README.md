@@ -6,10 +6,12 @@ Skolska godina 2022/2023.
 Za izradu je korišćen skelet projekta: `https://github.com/matf-racunarska-grafika/project_base.git` 
 i materijali sa [LearnOpenGL](https://learnopengl.com/).
 
+[Link](https://www.youtube.com/watch?v=qexc3Id7qw8) ka video demonstraciji projekta.
+
 ---------------------------------------
 
 # Opis
-Projekat je implementacija jedne staticne scene. Srediste scene predstavlja model grada. Oko njega su prikazani instancirani modeli lebdece vegetacije. 
+Projekat je implementacija staticne scene. Srediste scene predstavlja model grada. Oko njega su prikazani instancirani modeli lebdece vegetacije. 
 Osim ovih elemenata na sceni se nalaze i kameni mostovi.
 
 Na sceni su osim, direkcionog svetla implementirana i dva pokretna izvora svetlosti.
